@@ -2,6 +2,8 @@
 from openie import StanfordOpenIE
 import json
 from collections import defaultdict
+from pycorenlp import *
+import nltk
 
 properties = {
     'openie.affinity_probability_cap': 2 / 3,
@@ -19,11 +21,21 @@ properties = {
 #Item : [all relations]
 relations = defaultdict(list)
 
+#get de-deduplicated relations 
+# Source - https://stackoverflow.com/a/71904870
+# Posted by Anthony DiDonato
+# Retrieved 2026-08-11, License - CC BY-SA 4.0
+
+
 def get_relations(all_items):
     with StanfordOpenIE(properties = properties) as client:
+        props = {"annotators": "tokenize,ssplit,pos,depparse,natlog,openie",
+                                  "outputFormat": "json",
+                                  "openie.triple.strict": "true",
+                                  "openie.max_entailments_per_clause": "1"}
         for item_name in all_items:
             item_content = all_items[item_name]
-            for triple in client.annotate(item_content):
+            for triple in client.annotate(item_content, properties = props):
                 # print("|-", triple)
                 relations[item_name].append(triple)
     #save relations to file
